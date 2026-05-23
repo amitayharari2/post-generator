@@ -1,0 +1,816 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>מחולל פוסטים | בונים הון</title>
+<link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0f0a;
+    --bg2: #0d1510;
+    --surface: #111a12;
+    --surface2: #162018;
+    --border: #1e2e20;
+    --border2: #243028;
+    --green: #2ecc8a;
+    --green2: #3ddfa0;
+    --green-dark: #1a7a50;
+    --green-bg: #0d2018;
+    --yellow: #e8d44d;
+    --yellow2: #f5e06a;
+    --text: #f0f5f0;
+    --text2: #8aaa8a;
+    --text3: #3a5a3a;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Heebo', sans-serif;
+    min-height: 100vh;
+    direction: rtl;
+  }
+
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background:
+      radial-gradient(ellipse at 10% 0%, rgba(46,204,138,0.06) 0%, transparent 50%),
+      radial-gradient(ellipse at 90% 100%, rgba(46,204,138,0.04) 0%, transparent 50%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .page {
+    position: relative;
+    z-index: 1;
+    max-width: 760px;
+    margin: 0 auto;
+    padding: 56px 24px 80px;
+  }
+
+  /* לוגו וכותרת */
+  .header {
+    text-align: center;
+    margin-bottom: 48px;
+    animation: fadeUp 0.7s ease both;
+  }
+
+  .logo {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 24px;
+  }
+
+  .logo-text {
+    font-size: 22px;
+    font-weight: 900;
+    color: var(--text);
+    letter-spacing: -0.5px;
+  }
+
+  .logo-text span {
+    color: var(--green);
+  }
+
+  .logo-dot {
+    width: 8px;
+    height: 8px;
+    background: var(--green);
+    border-radius: 50%;
+    margin-bottom: 12px;
+  }
+
+  .header h1 {
+    font-size: clamp(28px, 5vw, 44px);
+    font-weight: 900;
+    line-height: 1.1;
+    margin-bottom: 10px;
+    color: var(--text);
+  }
+
+  .header h1 span { color: var(--green); }
+
+  .header p {
+    color: var(--text2);
+    font-size: 15px;
+    font-weight: 300;
+  }
+
+  .header-line {
+    width: 48px;
+    height: 2px;
+    background: var(--green);
+    margin: 18px auto 0;
+    border-radius: 2px;
+    opacity: 0.6;
+  }
+
+  /* כרטיס בקרה */
+  .control-card {
+    background: var(--surface);
+    border: 1px solid var(--border2);
+    border-radius: 14px;
+    padding: 20px;
+    margin-bottom: 16px;
+    animation: fadeUp 0.7s ease 0.1s both;
+    box-shadow: 0 4px 32px rgba(0,0,0,0.5);
+  }
+
+  .control-row {
+    display: flex;
+    gap: 10px;
+    align-items: stretch;
+  }
+
+  .select-wrapper {
+    flex: 1;
+    position: relative;
+  }
+
+  .select-wrapper::after {
+    content: '▾';
+    position: absolute;
+    left: 14px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--green);
+    font-size: 11px;
+    pointer-events: none;
+  }
+
+  select {
+    width: 100%;
+    background: var(--surface2);
+    border: 1px solid var(--border2);
+    color: var(--text);
+    font-family: 'Heebo', sans-serif;
+    font-size: 14px;
+    padding: 13px 16px 13px 36px;
+    border-radius: 10px;
+    outline: none;
+    cursor: pointer;
+    appearance: none;
+    transition: border-color 0.2s;
+  }
+
+  select:focus { border-color: var(--green); }
+
+  optgroup { color: var(--text2); font-size: 12px; }
+
+  .btn-generate {
+    background: var(--green);
+    color: #0a0f0a;
+    font-family: 'Heebo', sans-serif;
+    font-size: 14px;
+    font-weight: 800;
+    padding: 13px 24px;
+    border-radius: 10px;
+    border: none;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: all 0.2s;
+    letter-spacing: 0.3px;
+  }
+
+  .btn-generate:hover {
+    background: var(--green2);
+    transform: translateY(-1px);
+  }
+
+  .btn-generate:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none;
+  }
+
+  /* חדשות */
+  .news-bar {
+    background: var(--green-bg);
+    border: 1px solid #1a3a28;
+    border-radius: 8px;
+    padding: 10px 14px;
+    margin-top: 10px;
+    font-size: 13px;
+    color: var(--green);
+    display: none;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .news-dot {
+    width: 5px;
+    height: 5px;
+    background: var(--green);
+    border-radius: 50%;
+    flex-shrink: 0;
+    animation: pulse 2s infinite;
+  }
+
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
+
+  /* בדג' סגנון */
+  .style-badge {
+    background: #0d1a30;
+    border: 1px solid #1a3060;
+    border-radius: 8px;
+    padding: 10px 14px;
+    margin-top: 10px;
+    font-size: 13px;
+    color: #6aacdc;
+    display: none;
+    align-items: center;
+    gap: 8px;
+  }
+  .style-badge.show { display: flex; }
+
+  /* טאבים */
+  .tabs {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 14px;
+    animation: fadeUp 0.7s ease 0.2s both;
+  }
+
+  .tab {
+    flex: 1;
+    padding: 11px;
+    border-radius: 10px;
+    border: 1px solid var(--border2);
+    background: var(--surface);
+    color: var(--text2);
+    font-family: 'Heebo', sans-serif;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-align: center;
+  }
+
+  .tab:hover { border-color: var(--green); color: var(--green); }
+
+  .tab.active {
+    background: var(--green-bg);
+    border-color: var(--green);
+    color: var(--green);
+  }
+
+  /* כרטיס פוסט */
+  .post-card {
+    background: var(--surface);
+    border: 1px solid var(--border2);
+    border-radius: 14px;
+    padding: 28px;
+    min-height: 200px;
+    animation: fadeUp 0.7s ease 0.3s both;
+    box-shadow: 0 4px 32px rgba(0,0,0,0.5);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .post-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 180px;
+    height: 180px;
+    background: radial-gradient(ellipse at top right, rgba(46,204,138,0.04), transparent 70%);
+    pointer-events: none;
+  }
+
+  .post-label {
+    font-size: 10px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--green);
+    font-weight: 700;
+    margin-bottom: 6px;
+    opacity: 0.8;
+  }
+
+  .post-topic {
+    font-size: 12px;
+    color: var(--text3);
+    margin-bottom: 18px;
+    padding-bottom: 14px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .post-text {
+    font-size: 15px;
+    line-height: 1.9;
+    white-space: pre-wrap;
+    color: var(--text);
+    font-weight: 300;
+    outline: none;
+    min-height: 80px;
+    border-radius: 6px;
+    transition: background 0.2s, padding 0.2s;
+  }
+
+  .post-text:focus {
+    background: rgba(46,204,138,0.03);
+    padding: 8px;
+    margin: -8px;
+  }
+
+  .edit-hint {
+    font-size: 11px;
+    color: var(--text3);
+    margin-top: 6px;
+  }
+
+  .post-actions {
+    display: flex;
+    gap: 8px;
+    margin-top: 20px;
+    padding-top: 18px;
+    border-top: 1px solid var(--border);
+    flex-wrap: wrap;
+  }
+
+  .btn-copy {
+    flex: 1;
+    background: var(--green);
+    color: #0a0f0a;
+    font-family: 'Heebo', sans-serif;
+    font-size: 14px;
+    font-weight: 800;
+    padding: 12px;
+    border-radius: 10px;
+    border: none;
+    cursor: pointer;
+    transition: all 0.2s;
+    min-width: 100px;
+  }
+
+  .btn-copy:hover { background: var(--green2); transform: translateY(-1px); }
+
+  .btn-used {
+    background: var(--yellow);
+    color: #0a0f0a;
+    font-family: 'Heebo', sans-serif;
+    font-size: 13px;
+    font-weight: 800;
+    padding: 12px 16px;
+    border-radius: 10px;
+    border: none;
+    cursor: pointer;
+    transition: all 0.2s;
+    white-space: nowrap;
+  }
+
+  .btn-used:hover { background: var(--yellow2); transform: translateY(-1px); }
+
+  .btn-regen {
+    background: transparent;
+    color: var(--text2);
+    font-family: 'Heebo', sans-serif;
+    font-size: 13px;
+    padding: 12px 16px;
+    border-radius: 10px;
+    border: 1px solid var(--border2);
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .btn-regen:hover { border-color: var(--green); color: var(--green); }
+
+  /* ריק */
+  .empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 48px 0;
+    gap: 12px;
+    color: var(--text3);
+    font-size: 14px;
+    font-weight: 300;
+  }
+
+  .empty-icon {
+    width: 40px;
+    height: 40px;
+    border: 1px solid var(--border2);
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    opacity: 0.4;
+  }
+
+  /* לודר */
+  .loader {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 48px 0;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .loader-text { color: var(--text3); font-size: 13px; font-weight: 300; }
+
+  .dots { display: flex; gap: 6px; }
+
+  .dot {
+    width: 6px;
+    height: 6px;
+    background: var(--green);
+    border-radius: 50%;
+    animation: bounce 1.4s infinite ease-in-out;
+  }
+
+  .dot:nth-child(2){animation-delay:0.2s}
+  .dot:nth-child(3){animation-delay:0.4s}
+
+  @keyframes bounce{0%,80%,100%{transform:scale(0.5);opacity:0.3}40%{transform:scale(1);opacity:1}}
+
+  /* Toast */
+  .copied-toast {
+    position: fixed;
+    bottom: 28px;
+    left: 50%;
+    transform: translateX(-50%) translateY(80px);
+    background: var(--green-dark);
+    border: 1px solid var(--green);
+    color: var(--green2);
+    font-family: 'Heebo', sans-serif;
+    font-size: 14px;
+    font-weight: 700;
+    padding: 12px 28px;
+    border-radius: 50px;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+    transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+    z-index: 100;
+    white-space: nowrap;
+  }
+
+  .copied-toast.show { transform: translateX(-50%) translateY(0); }
+
+  /* היסטוריה */
+  .history-section {
+    margin-top: 28px;
+    animation: fadeUp 0.7s ease 0.4s both;
+  }
+
+  .history-title {
+    font-size: 10px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--text3);
+    font-weight: 700;
+    margin-bottom: 10px;
+  }
+
+  .history-list {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    max-height: 280px;
+    overflow-y: auto;
+  }
+
+  .history-item {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 12px 16px;
+    cursor: pointer;
+    transition: border-color 0.2s;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .history-item:hover { border-color: var(--border2); }
+  .history-item.used { border-color: #1a3060; }
+
+  .history-topic { font-size: 13px; color: var(--text2); }
+  .history-date { font-size: 11px; color: var(--text3); }
+  .history-badge {
+    background: #0d1a30;
+    color: #6aacdc;
+    font-size: 10px;
+    padding: 2px 8px;
+    border-radius: 20px;
+    font-weight: 700;
+  }
+
+  @keyframes fadeUp { from{opacity:0;transform:translateY(14px)} to{opacity:1;transform:translateY(0)} }
+
+  @media(max-width:480px) {
+    .page{padding:36px 16px 60px}
+    .control-row{flex-direction:column}
+    .btn-generate{width:100%}
+  }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <div class="header">
+    <div class="logo">
+      <span class="logo-text">בונים <span>הון</span>.</span>
+    </div>
+    <h1>מחולל <span>פוסטים</span></h1>
+    <p>פוסט מוכן לפרסום - רק תאשר ותשלח</p>
+    <div class="header-line"></div>
+  </div>
+
+  <div class="control-card">
+    <div class="control-row">
+      <div class="select-wrapper">
+        <select id="topicSelect" onchange="toggleIdeaRow(this.value)">
+          <optgroup label="✍️ רעיון שלי">
+            <option value="my_idea">כתוב רעיון חופשי + מחקר</option>
+          </optgroup>
+          <optgroup label="📰 חדשות">
+            <option value="auto_news">חדשות השוק היום</option>
+          </optgroup>
+          <optgroup label="📈 שוק ההון">
+            <option value="psychology">פסיכולוגיה של משקיעים</option>
+            <option value="inflation">אינפלציה וכוח קנייה</option>
+            <option value="time">ריבית דריבית וכוח הזמן</option>
+            <option value="timing">למה לא לתזמן את השוק</option>
+            <option value="monthly">קניות קטנות כל חודש</option>
+            <option value="fear">הפחד מהשקעות</option>
+            <option value="myth">מיתוס נפוץ</option>
+            <option value="start">איך מתחילים</option>
+            <option value="freedom">עצמאות פיננסית</option>
+            <option value="tlv35">מדד תל אביב 35</option>
+            <option value="tlv125">מדד תל אביב 125</option>
+            <option value="world">מדד עולמי</option>
+          </optgroup>
+          <optgroup label="₿ ביטקוין">
+            <option value="bitcoin">ביטקוין</option>
+            <option value="stablecoin">סטייבלקוין</option>
+          </optgroup>
+          <optgroup label="🏠 נדלן">
+            <option value="realestate">עסקאות השבחה בישראל</option>
+          </optgroup>
+        </select>
+      </div>
+      <button class="btn-generate" id="generateBtn" onclick="generate()">✦ צור פוסט</button>
+    </div>
+    <div id="ideaRow" style="display:block;margin-top:10px;">
+      <textarea id="ideaInput" placeholder="תאר את הרעיון שלך לפוסט - לדוגמה: הערכות בשוק שהריבית תעלה ב-2026..." rows="3" style="width:100%;background:#162018;border:1px solid #2ecc8a55;color:#f0f5f0;font-family:'Heebo',sans-serif;font-size:14px;padding:12px 16px;border-radius:10px;outline:none;resize:vertical;direction:rtl;line-height:1.6;"></textarea>
+    </div>
+    <div class="news-bar" id="newsBar">
+      <div class="news-dot"></div>
+      <span id="newsText">טוען חדשות...</span>
+    </div>
+    <div class="style-badge" id="styleBadge">
+      ✦ הכלי למד מ-<span id="styleCount">0</span> פוסטים שלך
+    </div>
+  </div>
+
+  <div class="tabs">
+    <button class="tab active" onclick="switchTab('whatsapp', this)">📱 וואטסאפ</button>
+    <button class="tab" onclick="switchTab('telegram', this)">✈️ טלגרם</button>
+  </div>
+
+  <div class="post-card" id="postCard">
+    <div class="empty">
+      <div class="empty-icon">✦</div>
+      <span>בחר נושא ולחץ "צור פוסט"</span>
+    </div>
+  </div>
+
+  <div class="history-section" id="historySection" style="display:none">
+    <div class="history-title">היסטוריה</div>
+    <div class="history-list" id="historyList"></div>
+  </div>
+
+</div>
+
+<div class="copied-toast" id="copiedToast">✓ הועתק ללוח</div>
+
+<script>
+const TOPICS = {
+  psychology: 'פסיכולוגיה של משקיעים והטיות קוגניטיביות',
+  inflation: 'אינפלציה ושחיקת כוח הקנייה',
+  time: 'ריבית דריבית וכוח הזמן',
+  timing: 'למה לא לתזמן את השוק',
+  monthly: 'קניות קטנות וקבועות כל חודש',
+  fear: 'הפחד מהשקעות',
+  myth: 'מיתוס נפוץ על השקעות',
+  start: 'איך מתחילים להשקיע',
+  freedom: 'עצמאות פיננסית',
+  tlv35: 'מדד תל אביב 35',
+  tlv125: 'מדד תל אביב 125',
+  world: 'מדד עולמי',
+  bitcoin: 'ביטקוין',
+  stablecoin: 'סטייבלקוין',
+  realestate: 'עסקאות השבחה בנדלן בישראל - קנייה שיפוץ מכירה',
+};
+
+let posts = { whatsapp: '', telegram: '' };
+let currentTab = 'whatsapp';
+let currentTopic = '';
+let newsTopics = [];
+let isCustomIdea = false;
+
+function loadHistory() { try { return JSON.parse(localStorage.getItem('postHistory') || '[]'); } catch { return []; } }
+function saveHistory(h) { localStorage.setItem('postHistory', JSON.stringify(h)); }
+function loadLearnedPosts() { try { return JSON.parse(localStorage.getItem('learnedPosts') || '[]'); } catch { return []; } }
+function saveLearnedPosts(p) { localStorage.setItem('learnedPosts', JSON.stringify(p)); }
+
+function getLearnedStyle() {
+  const learned = loadLearnedPosts();
+  if (learned.length === 0) return '';
+  return `דוגמאות לפוסטים שהמשתמש אישר:\n\n${learned.slice(-5).map((p,i) => `דוגמה ${i+1}:\n${p}`).join('\n\n---\n\n')}`;
+}
+
+function toggleIdeaRow(val) {
+  const row = document.getElementById('ideaRow');
+  row.style.display = val === 'my_idea' ? 'block' : 'none';
+}
+
+async function generate() {
+  const btn = document.getElementById('generateBtn');
+  const card = document.getElementById('postCard');
+  const val = document.getElementById('topicSelect').value;
+  const newsBar = document.getElementById('newsBar');
+
+  btn.disabled = true;
+  btn.textContent = 'מייצר...';
+  newsBar.style.display = 'none';
+  posts = { whatsapp: '', telegram: '' };
+
+  card.innerHTML = `<div class="loader"><div class="dots"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div><div class="loader-text">כותב פוסט...</div></div>`;
+
+  if (val === 'auto_news') {
+    try {
+      if (newsTopics.length > 1) {
+        newsTopics.shift();
+        currentTopic = newsTopics[0];
+      } else {
+        const res = await fetch('/api/news', { method: 'POST', headers: { 'Content-Type': 'application/json' } });
+        const data = await res.json();
+        newsTopics = data.topics || ['חדשות שוק ההון היום'];
+        currentTopic = newsTopics[0];
+      }
+      document.getElementById('newsText').textContent = currentTopic;
+      newsBar.style.display = 'flex';
+    } catch { currentTopic = 'חדשות שוק ההון היום'; }
+  } else if (val === 'my_idea') {
+    const idea = document.getElementById('ideaInput').value.trim();
+    if (!idea) {
+      card.innerHTML = '<div class="empty"><div class="empty-icon">✍️</div><span>כתוב רעיון לפוסט בשדה למעלה</span></div>';
+      btn.disabled = false;
+      btn.textContent = '✦ צור פוסט';
+      return;
+    }
+    currentTopic = idea;
+    isCustomIdea = true;
+  } else {
+    currentTopic = TOPICS[val];
+    isCustomIdea = false;
+  }
+
+  const learnedStyle = await getLearnedStyle();
+
+  // מייצר פוסט אחד ומתאים לשני הפלטפורמות
+  const basePost = await fetchPost(currentTopic, learnedStyle);
+  posts.whatsapp = basePost;
+  // וואטסאפ - כוכבית אחת בדיוק (כבר בפורמט הנכון)
+  posts.whatsapp = basePost;
+  // טלגרם - ממיר כוכבית אחת לשתיים בלבד
+  posts.telegram = basePost.replace(/(?<!\*)\*(?!\*)([^*]+)(?<!\*)\*(?!\*)/g, '**$1**');
+
+  renderPost();
+  btn.disabled = false;
+  btn.textContent = '✦ צור פוסט';
+
+  const history = loadHistory();
+  history.unshift({ topic: currentTopic, date: new Date().toLocaleDateString('he-IL'), wa: posts.whatsapp, tg: posts.telegram, used: false });
+  if (history.length > 50) history.pop();
+  saveHistory(history);
+  renderHistory();
+}
+
+async function fetchPost(topic, learnedStyle, searchFirst = false) {
+  try {
+    const res = await fetch('/api/generate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ topic, learnedStyle, searchFirst })
+    });
+    const data = await res.json();
+    return data.post || 'שגיאה: ' + (data.error || 'נסה שוב');
+  } catch { return 'שגיאה - נסה שוב'; }
+}
+
+function renderPost() {
+  const card = document.getElementById('postCard');
+  const text = posts[currentTab];
+  if (!text) return;
+  const label = currentTab === 'whatsapp' ? '📱 וואטסאפ' : '✈️ טלגרם';
+  card.innerHTML = `
+    <div class="post-label">${label}</div>
+    <div class="post-topic">${currentTopic}</div>
+    <div class="post-text" contenteditable="true" id="editablePost" oninput="updatePost(this)">${escHtml(text)}</div>
+    <div class="edit-hint">לחץ על הטקסט לעריכה ידנית</div>
+    <div class="post-actions">
+      <button class="btn-copy" onclick="copyPost()">📋 העתק</button>
+      <button class="btn-used" onclick="markUsed()">✓ השתמשתי</button>
+      <button class="btn-regen" onclick="generate()">↺ אחר</button>
+    </div>`;
+}
+
+function updatePost(el) { posts[currentTab] = el.innerText; }
+
+function switchTab(tab, el) {
+  currentTab = tab;
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+  if (posts[tab]) renderPost();
+}
+
+function copyPost() {
+  navigator.clipboard.writeText(posts[currentTab]);
+  showToast('✓ הועתק ללוח');
+}
+
+async function markUsed() {
+  // שמור בדאטהבייס
+  try {
+    await fetch('/api/save-post', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ post: posts[currentTab] })
+    });
+  } catch(e) { console.log('DB save failed', e); }
+
+  // שמור גם מקומית
+  const learned = loadLearnedPosts();
+  learned.push(posts[currentTab]);
+  if (learned.length > 20) learned.shift();
+  saveLearnedPosts(learned);
+
+  const history = loadHistory();
+  if (history[0]) history[0].used = true;
+  saveHistory(history);
+  renderHistory();
+  updateStyleBadge();
+  showToast('✓ נשמר - הכלי לומד מהסגנון שלך!');
+}
+
+function showToast(msg) {
+  const toast = document.getElementById('copiedToast');
+  toast.textContent = msg;
+  toast.classList.add('show');
+  setTimeout(() => { toast.classList.remove('show'); }, 2500);
+}
+
+function updateStyleBadge() {
+  const learned = loadLearnedPosts();
+  const badge = document.getElementById('styleBadge');
+  if (learned.length > 0) {
+    badge.classList.add('show');
+    document.getElementById('styleCount').textContent = learned.length;
+  }
+}
+
+function renderHistory() {
+  const history = loadHistory();
+  const section = document.getElementById('historySection');
+  const list = document.getElementById('historyList');
+  if (history.length === 0) { section.style.display = 'none'; return; }
+  section.style.display = 'block';
+  list.innerHTML = history.map((item, i) => `
+    <div class="history-item ${item.used ? 'used' : ''}" onclick="loadFromHistory(${i})">
+      <div class="history-topic">${item.topic}</div>
+      <div style="display:flex;align-items:center;gap:8px">
+        ${item.used ? '<span class="history-badge">✓</span>' : ''}
+        <span class="history-date">${item.date}</span>
+      </div>
+    </div>`).join('');
+}
+
+function loadFromHistory(i) {
+  const history = loadHistory();
+  const item = history[i];
+  if (!item) return;
+  currentTopic = item.topic;
+  posts.whatsapp = item.wa;
+  posts.telegram = item.tg;
+  renderPost();
+}
+
+function escHtml(t) { return t.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+updateStyleBadge();
+renderHistory();
+</script>
+</body>
+</html>
