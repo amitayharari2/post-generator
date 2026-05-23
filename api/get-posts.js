@@ -10,7 +10,8 @@ export default async function handler(req, res) {
   if (!supabaseUrl || !supabaseKey) return res.status(500).json({ error: 'Missing Supabase config' });
 
   try {
-    const response = await fetch(`${supabaseUrl}/rest/v1/learned_posts?order=created_at.desc&limit=5`, {
+    const supabaseBase = supabaseUrl.replace('/rest/v1/', '').replace(/\/$/, '');
+const response = await fetch(`${supabaseBase}/rest/v1/learned_posts?order=created_at.desc&limit=5`, {
       headers: {
         'apikey': supabaseKey,
         'Authorization': `Bearer ${supabaseKey}`
