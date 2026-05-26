@@ -727,7 +727,14 @@ function renderPost() {
     </div>`;
 }
 
-function updatePost(el) { posts[currentTab] = el.innerText; }
+function updatePost(el) {
+  const text = el.innerText;
+  posts[currentTab] = text;
+  if (currentTab === 'whatsapp') {
+    posts.telegram = text.replace(/\*([^\*
+]+)\*/g, '**$1**');
+  }
+}
 
 function switchTab(tab, el) {
   currentTab = tab;

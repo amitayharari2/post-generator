@@ -11,7 +11,7 @@ export default async function handler(req, res) {
 
   try {
     const supabaseBase = supabaseUrl.replace('/rest/v1/', '').replace(/\/$/, '');
-const response = await fetch(`${supabaseBase}/rest/v1/learned_posts?order=created_at.desc&limit=5`, {
+    const response = await fetch(`${supabaseBase}/rest/v1/learned_posts?order=created_at.desc&limit=15`, {
       headers: {
         'apikey': supabaseKey,
         'Authorization': `Bearer ${supabaseKey}`
