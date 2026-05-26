@@ -731,8 +731,8 @@ function updatePost(el) {
   const text = el.innerText;
   posts[currentTab] = text;
   if (currentTab === 'whatsapp') {
-    posts.telegram = text.replace(/\*([^\*
-]+)\*/g, '**$1**');
+    posts.telegram = text.replace(/[*]([^*
+]+)[*]/g, '**$1**');
   }
 }
 
