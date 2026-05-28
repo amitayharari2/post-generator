@@ -22,7 +22,6 @@ export default async function handler(req, res) {
         model: 'claude-sonnet-4-5',
         max_tokens: 400,
         tools: [{ type: 'web_search_20250305', name: 'web_search' }],
-        tool_choice: { type: 'any' },
         messages: [{
           role: 'user',
           content: `Search for today's (${today}) top 5 most relevant financial and crypto news. Find 5 DIFFERENT topics. Return the topics in Hebrew. Return JSON only: {"topics": ["נושא 1", "נושא 2", "נושא 3", "נושא 4", "נושא 5"]}`
