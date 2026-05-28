@@ -617,6 +617,7 @@ let posts = { whatsapp: '', telegram: '' };
 let currentTab = 'whatsapp';
 let currentTopic = '';
 let newsTopics = [];
+let isNewsPost = false;
 let isCustomIdea = false;
 
 function loadHistory() { try { return JSON.parse(localStorage.getItem('postHistory') || '[]'); } catch { return []; } }
@@ -675,12 +676,13 @@ async function generate() {
   } else {
     currentTopic = TOPICS[val];
     isCustomIdea = false;
+    isNewsPost = false;
   }
 
   const learnedStyle = await getLearnedStyle();
 
   // מייצר פוסט אחד ומתאים לשני הפלטפורמות
-  const basePost = await fetchPost(currentTopic, learnedStyle);
+  const basePost = await fetchPost(currentTopic, learnedStyle, isNewsPost);
   posts.whatsapp = basePost;
   // וואטסאפ - כוכבית אחת בדיוק (כבר בפורמט הנכון)
   posts.whatsapp = basePost;
@@ -698,12 +700,12 @@ async function generate() {
   renderHistory();
 }
 
-async function fetchPost(topic, learnedStyle, searchFirst = false) {
+async function fetchPost(topic, learnedStyle, isNews = false) {
   try {
     const res = await fetch('/api/generate', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ topic, learnedStyle, searchFirst })
+      body: JSON.stringify({ topic, learnedStyle, isNews })
     });
     const data = await res.json();
     return data.post || 'שגיאה: ' + (data.error || 'נסה שוב');
