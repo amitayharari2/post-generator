@@ -25,7 +25,7 @@ export default async function handler(req, res) {
         tool_choice: { type: 'any' },
         messages: [{
           role: 'user',
-          content: `Search for today's (${today}) top 5 most relevant financial and crypto news. Find 5 DIFFERENT topics. Return JSON only: {"topics": ["topic 1", "topic 2", "topic 3", "topic 4", "topic 5"]}`
+          content: `Search for today's (${today}) top 5 most relevant financial and crypto news. Find 5 DIFFERENT topics. Return the topics in Hebrew. Return JSON only: {"topics": ["נושא 1", "נושא 2", "נושא 3", "נושא 4", "נושא 5"]}`
         }]
       })
     });
