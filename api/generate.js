@@ -41,7 +41,7 @@ ${learnedStyle ? 'למד מהסגנון הזה:\n' + learnedStyle : ''}`;
     const now = new Date();
     const dateStr = now.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
     const userMessage = isNews
-      ? `Search for the LATEST data from today ${dateStr} about: ${topic}. Use ONLY numbers and facts from your search results. If you find data older than 24 hours, mention it is recent but not from today. Never invent numbers. Then write a post in Hebrew based on what you found.`
+      ? `Search for the LATEST data from today ${dateStr} about: ${topic}. Use ONLY numbers and facts from your search results. Never invent numbers. Then write ONLY the Hebrew post - no English, no explanations, no research notes, just the post itself.`
       : `נושא: ${topic}`;
 
     const response = await fetch('https://api.anthropic.com/v1/messages', {
