@@ -20,11 +20,11 @@ export default async function handler(req, res) {
       },
       body: JSON.stringify({
         model: 'claude-sonnet-4-5',
-        max_tokens: 800,
+        max_tokens: 300,
         tools: [{ type: 'web_search_20250305', name: 'web_search' }],
         messages: [{
           role: 'user',
-          content: `Search for today's (${today}) top 5 most relevant financial and crypto news. Find 5 DIFFERENT topics. Return the topics in Hebrew. Return JSON only: {"topics": ["נושא 1", "נושא 2", "נושא 3", "נושא 4", "נושא 5"]}`
+          content: `What are the top 5 different financial news stories today ${today}? Return Hebrew JSON only: {"topics": ["נושא 1", "נושא 2", "נושא 3", "נושא 4", "נושא 5"]}`
         }]
       })
     });
