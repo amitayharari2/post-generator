@@ -56,6 +56,7 @@ ${learnedStyle ? 'למד מהסגנון הזה:\n' + learnedStyle : ''}`;
         max_tokens: 1500,
         system: systemPrompt,
         ...(tools && { tools }),
+        ...(tools && { tool_choice: { type: 'any' } }),
         messages: [{ role: 'user', content: userMessage }]
       })
     });
