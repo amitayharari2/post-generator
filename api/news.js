@@ -24,7 +24,7 @@ export default async function handler(req, res) {
         tools: [{ type: 'web_search_20250305', name: 'web_search' }],
         messages: [{
           role: 'user',
-          content: `What are the top 5 different financial news stories today ${today}? Return Hebrew JSON only: {"topics": ["נושא 1", "נושא 2", "נושא 3", "נושא 4", "נושא 5"]}`
+          content: `Search for today's top financial news headlines only (not full articles). Give me 5 different headline topics from today ${today}. Return Hebrew JSON only, no explanation: {"topics": ["נושא 1", "נושא 2", "נושא 3", "נושא 4", "נושא 5"]}`
         }]
       })
     });
