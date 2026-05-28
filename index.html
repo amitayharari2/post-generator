@@ -568,6 +568,10 @@
       <div class="news-dot"></div>
       <span id="newsText">טוען חדשות...</span>
     </div>
+    <div id="topicPicker" style="display:none;margin-top:10px;">
+      <div style="font-size:12px;color:#2ecc8a;margin-bottom:8px;">בחר נושא לפוסט:</div>
+      <div id="topicButtons" style="display:flex;flex-direction:column;gap:6px;"></div>
+    </div>
     <div class="style-badge" id="styleBadge">
       ✦ הכלי למד מ-<span id="styleCount">0</span> פוסטים שלך
     </div>
@@ -631,6 +635,58 @@ function getLearnedStyle() {
   return `דוגמאות לפוסטים שהמשתמש אישר:\n\n${learned.slice(-5).map((p,i) => `דוגמה ${i+1}:\n${p}`).join('\n\n---\n\n')}`;
 }
 
+function showTopicPicker(topics) {
+  const picker = document.getElementById('topicPicker');
+  const buttons = document.getElementById('topicButtons');
+  const newsBar = document.getElementById('newsBar');
+  
+  newsBar.style.display = 'none';
+  picker.style.display = 'block';
+  
+  buttons.innerHTML = topics.map((t, i) => `
+    <button onclick="selectNewsTopic('${t.replace(/'/g, "\'")}', this)" style="
+      background:#0d2018;
+      border:1px solid #1a3a28;
+      color:#f0f5f0;
+      font-family:'Heebo',sans-serif;
+      font-size:13px;
+      padding:10px 14px;
+      border-radius:8px;
+      cursor:pointer;
+      text-align:right;
+      transition:all 0.2s;
+    " onmouseover="this.style.borderColor='#2ecc8a'" onmouseout="this.style.borderColor='#1a3a28'">${t}</button>
+  `).join('');
+}
+
+async function selectNewsTopic(topic, btn) {
+  document.getElementById('topicPicker').style.display = 'none';
+  currentTopic = topic;
+  isNewsPost = true;
+  
+  const generateBtn = document.getElementById('generateBtn');
+  const card = document.getElementById('postCard');
+  
+  generateBtn.disabled = true;
+  generateBtn.textContent = 'מייצר...';
+  card.innerHTML = '<div class="loader"><div class="dots"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div><div class="loader-text">כותב פוסט...</div></div>';
+
+  const learnedStyle = await getLearnedStyle();
+  const basePost = await fetchPost(currentTopic, learnedStyle, isNewsPost);
+  posts.whatsapp = basePost;
+  posts.telegram = basePost.replace(/\*([^*]+)\*/g, '**$1**');
+  renderPost();
+
+  generateBtn.disabled = false;
+  generateBtn.textContent = '✦ צור פוסט';
+
+  const history = loadHistory();
+  history.unshift({ topic: currentTopic, date: new Date().toLocaleDateString('he-IL'), wa: posts.whatsapp, tg: posts.telegram, used: false });
+  if (history.length > 50) history.pop();
+  saveHistory(history);
+  renderHistory();
+}
+
 function toggleIdeaRow(val) {
   const row = document.getElementById('ideaRow');
   row.style.display = val === 'my_idea' ? 'block' : 'none';
@@ -651,17 +707,13 @@ async function generate() {
 
   if (val === 'auto_news') {
     try {
-      if (newsTopics.length > 1) {
-        newsTopics.shift();
-        currentTopic = newsTopics[0];
-      } else {
-        const res = await fetch('/api/news', { method: 'POST', headers: { 'Content-Type': 'application/json' } });
-        const data = await res.json();
-        newsTopics = data.topics || ['חדשות שוק ההון היום'];
-        currentTopic = newsTopics[0];
-      }
-      document.getElementById('newsText').textContent = currentTopic;
-      newsBar.style.display = 'flex';
+      const res = await fetch('/api/news', { method: 'POST', headers: { 'Content-Type': 'application/json' } });
+      const data = await res.json();
+      newsTopics = data.topics || ['חדשות שוק ההון היום'];
+      showTopicPicker(newsTopics);
+      btn.disabled = false;
+      btn.textContent = '✦ צור פוסט';
+      return;
     } catch { currentTopic = 'חדשות שוק ההון היום'; }
   } else if (val === 'my_idea') {
     const idea = document.getElementById('ideaInput').value.trim();

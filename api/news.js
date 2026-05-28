@@ -9,6 +9,8 @@ export default async function handler(req, res) {
     const apiKey = process.env.ANTHROPIC_API_KEY;
     if (!apiKey) return res.status(500).json({ error: 'Missing API key' });
 
+    const today = new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+
     const response = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: {
@@ -18,11 +20,12 @@ export default async function handler(req, res) {
       },
       body: JSON.stringify({
         model: 'claude-sonnet-4-5',
-        max_tokens: 300,
+        max_tokens: 400,
         tools: [{ type: 'web_search_20250305', name: 'web_search' }],
+        tool_choice: { type: 'any' },
         messages: [{
           role: 'user',
-          content: 'חפש חדשות פיננסיות וקריפטו מהיום. מצא 5 נושאים שונים ומעניינים. החזר JSON בלבד: {"topics": ["נושא 1", "נושא 2", "נושא 3", "נושא 4", "נושא 5"]}'
+          content: `Search for today's (${today}) top 5 most relevant financial and crypto news. Find 5 DIFFERENT topics. Return JSON only: {"topics": ["topic 1", "topic 2", "topic 3", "topic 4", "topic 5"]}`
         }]
       })
     });
