@@ -20,7 +20,7 @@ export default async function handler(req, res) {
       },
       body: JSON.stringify({
         model: 'claude-sonnet-4-5',
-        max_tokens: 400,
+        max_tokens: 800,
         tools: [{ type: 'web_search_20250305', name: 'web_search' }],
         messages: [{
           role: 'user',
@@ -30,11 +30,17 @@ export default async function handler(req, res) {
     });
 
     const data = await response.json();
+    if (!response.ok) {
+      return res.status(500).json({ error: data.error?.message, topics: ['חדשות שוק ההון היום'] });
+    }
     const text = data.content.map(i => i.text || '').filter(Boolean).join('');
+    if (!text) {
+      return res.status(200).json({ topics: ['חדשות שוק ההון היום'], debug: 'no text in response' });
+    }
     const clean = text.replace(/```json|```/g, '').trim();
     const parsed = JSON.parse(clean);
     return res.status(200).json(parsed);
   } catch (error) {
-    return res.status(500).json({ topics: ['חדשות שוק ההון היום'] });
+    return res.status(500).json({ error: error.message, topics: ['חדשות שוק ההון היום'] });
   }
 }
