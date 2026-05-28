@@ -38,8 +38,10 @@ ${learnedStyle ? 'למד מהסגנון הזה:\n' + learnedStyle : ''}`;
     // אם זה פוסט חדשות - הוסף web search לדיוק
     const tools = isNews ? [{ type: 'web_search_20250305', name: 'web_search' }] : undefined;
 
+    const now = new Date();
+    const dateStr = now.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
     const userMessage = isNews
-      ? `חפש מידע עדכני ומדויק על הנושא הבא ואז כתוב פוסט מבוסס על עובדות אמיתיות בלבד: ${topic}`
+      ? `Search for the LATEST data from today ${dateStr} about: ${topic}. Use ONLY numbers and facts from your search results. If you find data older than 24 hours, mention it is recent but not from today. Never invent numbers. Then write a post in Hebrew based on what you found.`
       : `נושא: ${topic}`;
 
     const response = await fetch('https://api.anthropic.com/v1/messages', {
