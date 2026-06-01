@@ -59,8 +59,47 @@ export default async function handler(req, res) {
       return res.status(200).json({ topics: [{ title: 'חדשות שוק ההון היום', source: '', link: '' }] });
     }
 
-    // החזר עד 5 כותרות
-    const topics = allItems.slice(0, 5).map(item => ({
+    const top5 = allItems.slice(0, 5);
+
+    // תרגם כותרות אנגליות לעברית
+    const apiKey = process.env.ANTHROPIC_API_KEY;
+    if (apiKey) {
+      try {
+        const englishTitles = top5.filter(i => /[a-zA-Z]/.test(i.title));
+        if (englishTitles.length > 0) {
+          const translateRes = await fetch('https://api.anthropic.com/v1/messages', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'x-api-key': apiKey,
+              'anthropic-version': '2023-06-01'
+            },
+            body: JSON.stringify({
+              model: 'claude-sonnet-4-5',
+              max_tokens: 300,
+              messages: [{
+                role: 'user',
+                content: `תרגם את הכותרות הבאות לעברית. החזר JSON בלבד: {"translations": ["כותרת 1", "כותרת 2", ...]}
+
+${englishTitles.map((i,n) => `${n+1}. ${i.title}`).join('
+')}`
+              }]
+            })
+          });
+          const tData = await translateRes.json();
+          const tText = tData.content[0].text.replace(/```json|```/g, '').trim();
+          const tParsed = JSON.parse(tText);
+          let tIndex = 0;
+          top5.forEach(item => {
+            if (/[a-zA-Z]/.test(item.title)) {
+              item.title = tParsed.translations[tIndex++] || item.title;
+            }
+          });
+        }
+      } catch(e) {}
+    }
+
+    const topics = top5.map(item => ({
       title: item.title,
       source: item.source,
       link: item.link
