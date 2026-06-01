@@ -31,9 +31,12 @@ export default async function handler(req, res) {
           const linkMatch = item.match(/<link>(.*?)<\/link>/) ||
                            item.match(/<link href="(.*?)"/);
           if (titleMatch) {
+            let link = linkMatch ? linkMatch[1].trim() : '';
+            // נקה CDATA
+            link = link.replace(/<!\[CDATA\[/g, '').replace(/\]\]>/g, '').trim();
             items.push({
               title: titleMatch[1].trim(),
-              link: linkMatch ? linkMatch[1].trim() : '',
+              link: link,
               source: feed.name
             });
           }
