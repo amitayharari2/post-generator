@@ -21,8 +21,6 @@ export default async function handler(req, res) {
           signal: AbortSignal.timeout(5000)
         });
         const xml = await response.text();
-        
-        // חלץ כותרות מה-RSS
         const items = [];
         const itemRegex = /<item>([\s\S]*?)<\/item>/g;
         let match;
@@ -32,13 +30,10 @@ export default async function handler(req, res) {
                             item.match(/<title>(.*?)<\/title>/);
           const linkMatch = item.match(/<link>(.*?)<\/link>/) ||
                            item.match(/<link href="(.*?)"/);
-          const pubDateMatch = item.match(/<pubDate>(.*?)<\/pubDate>/);
-          
           if (titleMatch) {
             items.push({
               title: titleMatch[1].trim(),
               link: linkMatch ? linkMatch[1].trim() : '',
-              pubDate: pubDateMatch ? pubDateMatch[1].trim() : '',
               source: feed.name
             });
           }
@@ -47,12 +42,9 @@ export default async function handler(req, res) {
       })
     );
 
-    // איסוף כל הכותרות
     const allItems = [];
     results.forEach(result => {
-      if (result.status === 'fulfilled') {
-        allItems.push(...result.value);
-      }
+      if (result.status === 'fulfilled') allItems.push(...result.value);
     });
 
     if (allItems.length === 0) {
@@ -61,51 +53,43 @@ export default async function handler(req, res) {
 
     const top5 = allItems.slice(0, 5);
 
-    // תרגם כותרות אנגליות לעברית
+    // תרגם כותרות אנגליות
     const apiKey = process.env.ANTHROPIC_API_KEY;
-    if (apiKey) {
+    const englishItems = top5.filter(i => /[a-zA-Z]{4,}/.test(i.title));
+    
+    if (apiKey && englishItems.length > 0) {
       try {
-        const englishTitles = top5.filter(i => /[a-zA-Z]/.test(i.title));
-        if (englishTitles.length > 0) {
-          const translateRes = await fetch('https://api.anthropic.com/v1/messages', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'x-api-key': apiKey,
-              'anthropic-version': '2023-06-01'
-            },
-            body: JSON.stringify({
-              model: 'claude-sonnet-4-5',
-              max_tokens: 300,
-              messages: [{
-                role: 'user',
-                content: `תרגם את הכותרות הבאות לעברית. החזר JSON בלבד: {"translations": ["כותרת 1", "כותרת 2", ...]}
-
-${englishTitles.map((i,n) => `${n+1}. ${i.title}`).join('
-')}`
-              }]
-            })
-          });
-          const tData = await translateRes.json();
-          const tText = tData.content[0].text.replace(/```json|```/g, '').trim();
-          const tParsed = JSON.parse(tText);
-          let tIndex = 0;
-          top5.forEach(item => {
-            if (/[a-zA-Z]/.test(item.title)) {
-              item.title = tParsed.translations[tIndex++] || item.title;
-            }
-          });
-        }
+        const translateRes = await fetch('https://api.anthropic.com/v1/messages', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'x-api-key': apiKey,
+            'anthropic-version': '2023-06-01'
+          },
+          body: JSON.stringify({
+            model: 'claude-sonnet-4-5',
+            max_tokens: 200,
+            messages: [{
+              role: 'user',
+              content: `תרגם לעברית בלבד. החזר JSON: {"t":["תרגום1","תרגום2",...]}\n${englishItems.map((i,n) => `${n+1}. ${i.title}`).join('\n')}`
+            }]
+          })
+        });
+        const tData = await translateRes.json();
+        const tText = tData.content[0].text.replace(/```json|```/g, '').trim();
+        const tParsed = JSON.parse(tText);
+        let idx = 0;
+        top5.forEach(item => {
+          if (/[a-zA-Z]{4,}/.test(item.title)) {
+            item.title = tParsed.t[idx++] || item.title;
+          }
+        });
       } catch(e) {}
     }
 
-    const topics = top5.map(item => ({
-      title: item.title,
-      source: item.source,
-      link: item.link
-    }));
-
-    return res.status(200).json({ topics });
+    return res.status(200).json({ 
+      topics: top5.map(i => ({ title: i.title, source: i.source, link: i.link }))
+    });
   } catch (error) {
     return res.status(200).json({ topics: [{ title: 'חדשות שוק ההון היום', source: '', link: '' }] });
   }
