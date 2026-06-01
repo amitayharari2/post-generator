@@ -7,8 +7,8 @@ export default async function handler(req, res) {
 
   const RSS_FEEDS = [
     { name: 'Reuters', url: 'https://feeds.reuters.com/reuters/businessNews', limit: 3 },
-    { name: 'CNBC', url: 'https://www.cnbc.com/id/10000664/device/rss/rss.html', limit: 3 },
-    { name: 'MarketWatch', url: 'https://feeds.content.dowjones.io/public/rss/mw_topstories', limit: 2 },
+    { name: 'Yahoo Finance', url: 'https://finance.yahoo.com/news/rssindex', limit: 3 },
+    { name: 'Investing.com', url: 'https://www.investing.com/rss/news.rss', limit: 2 },
     { name: 'CoinDesk', url: 'https://www.coindesk.com/arc/outboundfeeds/rss/', limit: 1 },
     { name: 'CoinTelegraph', url: 'https://cointelegraph.com/rss', limit: 1 },
   ];
