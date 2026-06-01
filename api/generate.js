@@ -87,7 +87,7 @@ ${learnedStyle ? 'למד מהסגנון הזה:\n' + learnedStyle : ''}`;
 
     post = post.replace('[CTA]', cta);
 
-    return res.status(200).json({ post });
+    return res.status(200).json({ post, articleLength: articleContent.length });
   } catch (error) {
     return res.status(500).json({ error: error.message });
   }
