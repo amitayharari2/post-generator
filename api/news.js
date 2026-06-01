@@ -6,11 +6,11 @@ export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
   const RSS_FEEDS = [
-    { name: 'גלובס', url: 'https://www.globes.co.il/webservice/rss/rssfeeder.aspx?iID=585' },
-    { name: 'ביזפורטל', url: 'https://www.bizportal.co.il/rss/capital_market' },
-    { name: 'כלכליסט', url: 'https://www.calcalist.co.il/rss/AjaxPage,7340,L-rssFeeder,00.xml' },
     { name: 'CoinDesk', url: 'https://www.coindesk.com/arc/outboundfeeds/rss/' },
     { name: 'CoinTelegraph', url: 'https://cointelegraph.com/rss' },
+    { name: 'Reuters', url: 'https://feeds.reuters.com/reuters/businessNews' },
+    { name: 'CNBC', url: 'https://www.cnbc.com/id/10000664/device/rss/rss.html' },
+    { name: 'MarketWatch', url: 'https://feeds.content.dowjones.io/public/rss/mw_topstories' },
   ];
 
   try {
@@ -53,11 +53,9 @@ export default async function handler(req, res) {
 
     const top5 = allItems.slice(0, 5);
 
-    // תרגם כותרות אנגליות
+    // תרגם את כל הכותרות לעברית
     const apiKey = process.env.ANTHROPIC_API_KEY;
-    const englishItems = top5.filter(i => /[a-zA-Z]{4,}/.test(i.title));
-    
-    if (apiKey && englishItems.length > 0) {
+    if (apiKey) {
       try {
         const translateRes = await fetch('https://api.anthropic.com/v1/messages', {
           method: 'POST',
@@ -68,21 +66,18 @@ export default async function handler(req, res) {
           },
           body: JSON.stringify({
             model: 'claude-sonnet-4-5',
-            max_tokens: 200,
+            max_tokens: 300,
             messages: [{
               role: 'user',
-              content: `תרגם לעברית בלבד. החזר JSON: {"t":["תרגום1","תרגום2",...]}\n${englishItems.map((i,n) => `${n+1}. ${i.title}`).join('\n')}`
+              content: `תרגם את הכותרות הבאות לעברית קצרה וברורה. החזר JSON בלבד ללא הסברים: {"t":["תרגום1","תרגום2","תרגום3","תרגום4","תרגום5"]}\n${top5.map((i,n) => `${n+1}. ${i.title}`).join('\n')}`
             }]
           })
         });
         const tData = await translateRes.json();
         const tText = tData.content[0].text.replace(/```json|```/g, '').trim();
         const tParsed = JSON.parse(tText);
-        let idx = 0;
-        top5.forEach(item => {
-          if (/[a-zA-Z]{4,}/.test(item.title)) {
-            item.title = tParsed.t[idx++] || item.title;
-          }
+        top5.forEach((item, idx) => {
+          if (tParsed.t[idx]) item.title = tParsed.t[idx];
         });
       } catch(e) {}
     }
