@@ -650,22 +650,35 @@ function showTopicPicker(topics) {
     const link = t.link || '';
     const safeTitle = title.replace(/'/g, "\'").replace(/"/g, '&quot;');
     const safeLink = link.replace(/'/g, "\'");
-    return `<button onclick="selectNewsTopic('${safeTitle}', '${safeLink}', this)" style="
-      background:#0d2018;
-      border:1px solid #1a3a28;
-      color:#f0f5f0;
-      font-family:'Heebo',sans-serif;
-      font-size:13px;
-      padding:10px 14px;
-      border-radius:8px;
-      cursor:pointer;
-      text-align:right;
-      transition:all 0.2s;
-      width:100%;
-    " onmouseover="this.style.borderColor='#2ecc8a'" onmouseout="this.style.borderColor='#1a3a28'">
-      ${source ? `<span style="color:#2ecc8a;font-size:11px;display:block;margin-bottom:3px;">${source}</span>` : ''}
-      ${title}
-    </button>`;
+    return `<div style="display:flex;align-items:center;gap:6px;">
+      <button onclick="selectNewsTopic('${safeTitle}', '${safeLink}', this)" style="
+        flex:1;
+        background:#0d2018;
+        border:1px solid #1a3a28;
+        color:#f0f5f0;
+        font-family:'Heebo',sans-serif;
+        font-size:13px;
+        padding:10px 14px;
+        border-radius:8px;
+        cursor:pointer;
+        text-align:right;
+        transition:all 0.2s;
+      " onmouseover="this.style.borderColor='#2ecc8a'" onmouseout="this.style.borderColor='#1a3a28'">
+        ${source ? `<span style="color:#2ecc8a;font-size:11px;display:block;margin-bottom:3px;">${source}</span>` : ''}
+        ${title}
+      </button>
+      ${link ? `<a href="${link}" target="_blank" style="
+        background:transparent;
+        border:1px solid #1a3a28;
+        color:#2ecc8a;
+        font-size:11px;
+        padding:6px 10px;
+        border-radius:8px;
+        text-decoration:none;
+        white-space:nowrap;
+        flex-shrink:0;
+      ">קרא ↗</a>` : ''}
+    </div>`;
   }).join('');
 }
 
