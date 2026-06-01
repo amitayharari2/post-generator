@@ -37,25 +37,21 @@ ${learnedStyle ? 'למד מהסגנון הזה:\n' + learnedStyle : ''}`;
 
     let articleContent = '';
 
-    // אם יש לינק - קרא את הכתבה
+    // אם יש לינק - קרא את הכתבה דרך Jina Reader
     if (isNews && link) {
       try {
-        const articleRes = await fetch(link, {
-          headers: { 'User-Agent': 'Mozilla/5.0' },
-          signal: AbortSignal.timeout(8000)
+        const jinaUrl = `https://r.jina.ai/${link}`;
+        const articleRes = await fetch(jinaUrl, {
+          headers: { 
+            'User-Agent': 'Mozilla/5.0',
+            'Accept': 'text/plain'
+          },
+          signal: AbortSignal.timeout(10000)
         });
-        const html = await articleRes.text();
-        // חלץ טקסט בסיסי מה-HTML
-        const text = html
-          .replace(/<script[\s\S]*?<\/script>/gi, '')
-          .replace(/<style[\s\S]*?<\/style>/gi, '')
-          .replace(/<[^>]+>/g, ' ')
-          .replace(/\s+/g, ' ')
-          .trim()
-          .slice(0, 3000);
-        articleContent = text;
+        const text = await articleRes.text();
+        articleContent = text.slice(0, 4000);
       } catch (e) {
-        // אם לא הצלחנו לקרוא - ממשיך בלי
+        // אם לא הצלחנו - ממשיך בלי
       }
     }
 
