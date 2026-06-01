@@ -5,7 +5,7 @@ export default async function handler(req, res) {
   if (req.method === 'OPTIONS') return res.status(200).end();
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
-  const { topic, learnedStyle, isNews } = req.body;
+  const { topic, link, learnedStyle, isNews } = req.body;
 
   const systemPrompt = `אתה כותב פוסטים פיננסיים בעברית.
 
@@ -16,7 +16,7 @@ export default async function handler(req, res) {
 - מקף קצר (-)
 - 200-350 מילים
 - אל תמליץ ישירות על מוצרים פיננסיים
-- אל תכתוב מספרים ספציפיים אלא אם מצאת אותם בחיפוש
+- כתוב רק בעברית - אסור אנגלית בפוסט
 
 מבנה:
 1. משפט פתיחה מפתיע או שאלה שמכאיבה
@@ -35,13 +35,32 @@ ${learnedStyle ? 'למד מהסגנון הזה:\n' + learnedStyle : ''}`;
     const apiKey = process.env.ANTHROPIC_API_KEY;
     if (!apiKey) return res.status(500).json({ error: 'Missing API key' });
 
-    // אם זה פוסט חדשות - הוסף web search לדיוק
-    const tools = isNews ? [{ type: 'web_search_20250305', name: 'web_search' }] : undefined;
+    let articleContent = '';
 
-    const now = new Date();
-    const dateStr = now.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
-    const userMessage = isNews
-      ? `Search for the LATEST data from today ${dateStr} about: ${topic}. Use ONLY numbers and facts from your search results. Never invent numbers. Then write ONLY the Hebrew post - no English, no explanations, no research notes, just the post itself.`
+    // אם יש לינק - קרא את הכתבה
+    if (isNews && link) {
+      try {
+        const articleRes = await fetch(link, {
+          headers: { 'User-Agent': 'Mozilla/5.0' },
+          signal: AbortSignal.timeout(8000)
+        });
+        const html = await articleRes.text();
+        // חלץ טקסט בסיסי מה-HTML
+        const text = html
+          .replace(/<script[\s\S]*?<\/script>/gi, '')
+          .replace(/<style[\s\S]*?<\/style>/gi, '')
+          .replace(/<[^>]+>/g, ' ')
+          .replace(/\s+/g, ' ')
+          .trim()
+          .slice(0, 3000);
+        articleContent = text;
+      } catch (e) {
+        // אם לא הצלחנו לקרוא - ממשיך בלי
+      }
+    }
+
+    const userMessage = isNews && articleContent
+      ? `כתוב פוסט בעברית בלבד על הנושא הבא. השתמש בתוכן הכתבה לקבלת עובדות מדויקות. כתוב רק את הפוסט עצמו.\n\nנושא: ${topic}\n\nתוכן הכתבה:\n${articleContent}`
       : `נושא: ${topic}`;
 
     const response = await fetch('https://api.anthropic.com/v1/messages', {
@@ -53,10 +72,8 @@ ${learnedStyle ? 'למד מהסגנון הזה:\n' + learnedStyle : ''}`;
       },
       body: JSON.stringify({
         model: 'claude-sonnet-4-5',
-        max_tokens: 1500,
+        max_tokens: 1000,
         system: systemPrompt,
-        ...(tools && { tools }),
-        ...(tools && { tool_choice: { type: 'any' } }),
         messages: [{ role: 'user', content: userMessage }]
       })
     });
@@ -64,16 +81,16 @@ ${learnedStyle ? 'למד מהסגנון הזה:\n' + learnedStyle : ''}`;
     const data = await response.json();
     if (!response.ok) return res.status(500).json({ error: data.error?.message || JSON.stringify(data) });
 
-    const text = data.content.map(i => i.text || '').filter(Boolean).join('');
+    let post = data.content[0].text;
 
     const investmentKeywords = ['מדד', 'קרן סל', 'להשקיע', 'ביטקוין', 'נדלן', 'ריבית', 'S&P', 'תל אביב', 'IPO', 'מניה', 'תיק', 'זהב', 'שוק'];
-    const isInvestment = investmentKeywords.some(t => topic.includes(t) || text.includes(t));
+    const isInvestment = investmentKeywords.some(t => topic.includes(t) || post.includes(t));
 
     const cta = isInvestment
       ? '*להטבות הצטרפות לפתיחת חשבון מסחר 👇*\nhttps://bonimhon.co.il/ההטבות-שלנו/'
       : '*הצטרפו לקבלת עוד תוכן כזה 👇*\nhttps://chat.whatsapp.com/KRq5OeeQxZb0vfcjdTUEaF';
 
-    const post = text.replace('[CTA]', cta);
+    post = post.replace('[CTA]', cta);
 
     return res.status(200).json({ post });
   } catch (error) {

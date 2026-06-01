@@ -622,6 +622,7 @@ let currentTab = 'whatsapp';
 let currentTopic = '';
 let newsTopics = [];
 let isNewsPost = false;
+let currentNewsLink = '';
 let isCustomIdea = false;
 
 function loadHistory() { try { return JSON.parse(localStorage.getItem('postHistory') || '[]'); } catch { return []; } }
@@ -643,8 +644,13 @@ function showTopicPicker(topics) {
   newsBar.style.display = 'none';
   picker.style.display = 'block';
   
-  buttons.innerHTML = topics.map((t, i) => `
-    <button onclick="selectNewsTopic('${t.replace(/'/g, "\'")}', this)" style="
+  buttons.innerHTML = topics.map((t, i) => {
+    const title = t.title || t;
+    const source = t.source || '';
+    const link = t.link || '';
+    const safeTitle = title.replace(/'/g, "\'").replace(/"/g, '&quot;');
+    const safeLink = link.replace(/'/g, "\'");
+    return `<button onclick="selectNewsTopic('${safeTitle}', '${safeLink}', this)" style="
       background:#0d2018;
       border:1px solid #1a3a28;
       color:#f0f5f0;
@@ -655,14 +661,19 @@ function showTopicPicker(topics) {
       cursor:pointer;
       text-align:right;
       transition:all 0.2s;
-    " onmouseover="this.style.borderColor='#2ecc8a'" onmouseout="this.style.borderColor='#1a3a28'">${t}</button>
-  `).join('');
+      width:100%;
+    " onmouseover="this.style.borderColor='#2ecc8a'" onmouseout="this.style.borderColor='#1a3a28'">
+      ${source ? `<span style="color:#2ecc8a;font-size:11px;display:block;margin-bottom:3px;">${source}</span>` : ''}
+      ${title}
+    </button>`;
+  }).join('');
 }
 
-async function selectNewsTopic(topic, btn) {
+async function selectNewsTopic(topic, link, btn) {
   document.getElementById('topicPicker').style.display = 'none';
   currentTopic = topic;
   isNewsPost = true;
+  currentNewsLink = link;
   
   const generateBtn = document.getElementById('generateBtn');
   const card = document.getElementById('postCard');
@@ -672,7 +683,7 @@ async function selectNewsTopic(topic, btn) {
   card.innerHTML = '<div class="loader"><div class="dots"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div><div class="loader-text">כותב פוסט...</div></div>';
 
   const learnedStyle = await getLearnedStyle();
-  const basePost = await fetchPost(currentTopic, learnedStyle, isNewsPost);
+  const basePost = await fetchPost(currentTopic, learnedStyle, isNewsPost, currentNewsLink);
   posts.whatsapp = basePost;
   posts.telegram = basePost.replace(/\*([^*]+)\*/g, '**$1**');
   renderPost();
@@ -735,7 +746,7 @@ async function generate() {
   const learnedStyle = await getLearnedStyle();
 
   // מייצר פוסט אחד ומתאים לשני הפלטפורמות
-  const basePost = await fetchPost(currentTopic, learnedStyle, isNewsPost);
+  const basePost = await fetchPost(currentTopic, learnedStyle, isNewsPost, currentNewsLink);
   posts.whatsapp = basePost;
   // וואטסאפ - כוכבית אחת בדיוק (כבר בפורמט הנכון)
   posts.whatsapp = basePost;
@@ -753,12 +764,12 @@ async function generate() {
   renderHistory();
 }
 
-async function fetchPost(topic, learnedStyle, isNews = false) {
+async function fetchPost(topic, learnedStyle, isNews = false, link = '') {
   try {
     const res = await fetch('/api/generate', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ topic, learnedStyle, isNews })
+      body: JSON.stringify({ topic, learnedStyle, isNews, link })
     });
     const data = await res.json();
     return data.post || 'שגיאה: ' + (data.error || 'נסה שוב');
