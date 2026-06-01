@@ -6,11 +6,11 @@ export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
   const RSS_FEEDS = [
-    { name: 'CoinDesk', url: 'https://www.coindesk.com/arc/outboundfeeds/rss/' },
-    { name: 'CoinTelegraph', url: 'https://cointelegraph.com/rss' },
-    { name: 'Reuters', url: 'https://feeds.reuters.com/reuters/businessNews' },
-    { name: 'CNBC', url: 'https://www.cnbc.com/id/10000664/device/rss/rss.html' },
-    { name: 'MarketWatch', url: 'https://feeds.content.dowjones.io/public/rss/mw_topstories' },
+    { name: 'Reuters', url: 'https://feeds.reuters.com/reuters/businessNews', limit: 3 },
+    { name: 'CNBC', url: 'https://www.cnbc.com/id/10000664/device/rss/rss.html', limit: 3 },
+    { name: 'MarketWatch', url: 'https://feeds.content.dowjones.io/public/rss/mw_topstories', limit: 2 },
+    { name: 'CoinDesk', url: 'https://www.coindesk.com/arc/outboundfeeds/rss/', limit: 1 },
+    { name: 'CoinTelegraph', url: 'https://cointelegraph.com/rss', limit: 1 },
   ];
 
   try {
@@ -24,7 +24,7 @@ export default async function handler(req, res) {
         const items = [];
         const itemRegex = /<item>([\s\S]*?)<\/item>/g;
         let match;
-        while ((match = itemRegex.exec(xml)) !== null && items.length < 2) {
+        while ((match = itemRegex.exec(xml)) !== null && items.length < (feed.limit || 2)) {
           const item = match[1];
           const titleMatch = item.match(/<title><!\[CDATA\[(.*?)\]\]><\/title>/) || 
                             item.match(/<title>(.*?)<\/title>/);
@@ -51,7 +51,7 @@ export default async function handler(req, res) {
       return res.status(200).json({ topics: [{ title: 'חדשות שוק ההון היום', source: '', link: '' }] });
     }
 
-    const top5 = allItems.slice(0, 5);
+    const top5 = allItems.slice(0, 10);
 
     // תרגם את כל הכותרות לעברית
     const apiKey = process.env.ANTHROPIC_API_KEY;
@@ -69,7 +69,7 @@ export default async function handler(req, res) {
             max_tokens: 300,
             messages: [{
               role: 'user',
-              content: `תרגם את הכותרות הבאות לעברית קצרה וברורה. החזר JSON בלבד ללא הסברים: {"t":["תרגום1","תרגום2","תרגום3","תרגום4","תרגום5"]}\n${top5.map((i,n) => `${n+1}. ${i.title}`).join('\n')}`
+              content: `תרגם את הכותרות הבאות לעברית קצרה וברורה. החזר JSON בלבד ללא הסברים: {"t":["תרגום1","תרגום2",...]}\n${top5.map((i,n) => `${n+1}. ${i.title}`).join('\n')}`
             }]
           })
         });
