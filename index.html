@@ -582,6 +582,8 @@
     <button class="tab" onclick="switchTab('telegram', this)">✈️ טלגרם</button>
   </div>
 
+  <div id="articleIndicator" style="display:none;font-size:12px;padding:8px 12px;border-radius:8px;margin-bottom:10px;text-align:center;font-weight:500;"></div>
+
   <div class="post-card" id="postCard">
     <div class="empty">
       <div class="empty-icon">✦</div>
@@ -793,6 +795,7 @@ function updateIndicator() {
   const el = document.getElementById('articleIndicator');
   if (!el) return;
   const len = window._lastArticleLength || 0;
+  el.style.display = 'block';
   if (len > 0) {
     el.style.background = '#0d2018';
     el.style.color = '#2ecc8a';
