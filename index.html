@@ -643,6 +643,7 @@ function showTopicPicker(topics) {
   const buttons = document.getElementById('topicButtons');
   const newsBar = document.getElementById('newsBar');
   
+  window._newsTopics = topics;
   newsBar.style.display = 'none';
   picker.style.display = 'block';
   
@@ -650,10 +651,8 @@ function showTopicPicker(topics) {
     const title = t.title || t;
     const source = t.source || '';
     const link = t.link || '';
-    const safeTitle = title.replace(/'/g, "\'").replace(/"/g, '&quot;');
-    const safeLink = link.replace(/'/g, "\'");
     return `<div style="display:flex;align-items:center;gap:6px;">
-      <button onclick="selectNewsTopic('${safeTitle}', '${safeLink}', this)" style="
+      <button onclick="selectNewsTopicByIndex(${i}, this)" style="
         flex:1;
         background:#0d2018;
         border:1px solid #1a3a28;
@@ -666,10 +665,10 @@ function showTopicPicker(topics) {
         text-align:right;
         transition:all 0.2s;
       " onmouseover="this.style.borderColor='#2ecc8a'" onmouseout="this.style.borderColor='#1a3a28'">
-        ${source ? `<span style="color:#2ecc8a;font-size:11px;display:block;margin-bottom:3px;">${source}</span>` : ''}
-        ${title}
+        ${source ? `<span style="color:#2ecc8a;font-size:11px;display:block;margin-bottom:3px;">${escHtml(source)}</span>` : ''}
+        ${escHtml(title)}
       </button>
-      ${link ? `<a href="${link}" target="_blank" style="
+      ${link ? `<a href="${escHtml(link)}" target="_blank" style="
         background:transparent;
         border:1px solid #1a3a28;
         color:#2ecc8a;
@@ -682,6 +681,12 @@ function showTopicPicker(topics) {
       ">קרא ↗</a>` : ''}
     </div>`;
   }).join('');
+}
+
+function selectNewsTopicByIndex(i, btn) {
+  const t = window._newsTopics[i];
+  if (!t) return;
+  selectNewsTopic(t.title || t, t.link || '', btn);
 }
 
 async function selectNewsTopic(topic, link, btn) {
