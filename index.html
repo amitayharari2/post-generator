@@ -700,8 +700,7 @@ async function selectNewsTopic(topic, link, btn) {
   posts.whatsapp = basePost;
   posts.telegram = basePost.replace(/\*([^*]+)\*/g, '**$1**');
   renderPost();
-
-  generateBtn.disabled = false;
+  updateIndicator();
   generateBtn.textContent = '✦ צור פוסט';
 
   const history = loadHistory();
@@ -785,6 +784,7 @@ async function fetchPost(topic, learnedStyle, isNews = false, link = '') {
       body: JSON.stringify({ topic, learnedStyle, isNews, link })
     });
     const data = await res.json();
+    window._lastArticleLength = data.articleLength || 0;
     return data.post || 'שגיאה: ' + (data.error || 'נסה שוב');
   } catch { return 'שגיאה - נסה שוב'; }
 }
