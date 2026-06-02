@@ -789,6 +789,23 @@ async function fetchPost(topic, learnedStyle, isNews = false, link = '') {
   } catch { return 'שגיאה - נסה שוב'; }
 }
 
+function updateIndicator() {
+  const el = document.getElementById('articleIndicator');
+  if (!el) return;
+  const len = window._lastArticleLength || 0;
+  if (len > 0) {
+    el.style.background = '#0d2018';
+    el.style.color = '#2ecc8a';
+    el.style.border = '1px solid #2ecc8a44';
+    el.textContent = '✓ קרא כתבה: ' + len.toLocaleString() + ' תווים';
+  } else {
+    el.style.background = '#1a1a1a';
+    el.style.color = '#888';
+    el.style.border = '1px solid #333';
+    el.textContent = '⚠ מידע כללי';
+  }
+}
+
 function renderPost() {
   const card = document.getElementById('postCard');
   const text = posts[currentTab];
