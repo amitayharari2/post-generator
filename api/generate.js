@@ -37,18 +37,35 @@ ${learnedStyle ? 'למד מהסגנון הזה:\n' + learnedStyle : ''}`;
 
     let articleContent = '';
 
-    // אם יש לינק - נסה Jina Reader
+    // אם יש לינק - קרא כתבה דרך Bright Data Web Unlocker
     if (isNews && link) {
       try {
-        const jinaUrl = `https://r.jina.ai/${link}`;
-        const articleRes = await fetch(jinaUrl, {
-          headers: { 'User-Agent': 'Mozilla/5.0', 'Accept': 'text/plain' },
-          signal: AbortSignal.timeout(10000)
-        });
-        if (articleRes.ok) {
-          const text = await articleRes.text();
-          if (text && text.length > 200) {
-            articleContent = text.slice(0, 5000);
+        const bdKey = process.env.BRIGHT_DATA_API_KEY;
+        if (bdKey) {
+          const articleRes = await fetch('https://api.brightdata.com/request', {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${bdKey}`,
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+              zone: 'web_unlocker1',
+              url: link,
+              format: 'raw'
+            }),
+            signal: AbortSignal.timeout(20000)
+          });
+          if (articleRes.ok) {
+            const html = await articleRes.text();
+            if (html && html.length > 200) {
+              const text = html
+                .replace(/<script[\s\S]*?<\/script>/gi, '')
+                .replace(/<style[\s\S]*?<\/style>/gi, '')
+                .replace(/<[^>]+>/g, ' ')
+                .replace(/\s+/g, ' ')
+                .trim();
+              articleContent = text.slice(0, 5000);
+            }
           }
         }
       } catch (e) {}
