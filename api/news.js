@@ -7,10 +7,9 @@ export default async function handler(req, res) {
 
   const RSS_FEEDS = [
     { name: 'Reuters', url: 'https://feeds.reuters.com/reuters/businessNews', limit: 3 },
-    { name: 'Yahoo Finance', url: 'https://finance.yahoo.com/news/rssindex', limit: 3 },
-    { name: 'Investing.com', url: 'https://www.investing.com/rss/news.rss', limit: 2 },
-    { name: 'CoinDesk', url: 'https://www.coindesk.com/arc/outboundfeeds/rss/', limit: 1 },
-    { name: 'CoinTelegraph', url: 'https://cointelegraph.com/rss', limit: 1 },
+    { name: 'Investing.com', url: 'https://www.investing.com/rss/news.rss', limit: 3 },
+    { name: 'CoinDesk', url: 'https://www.coindesk.com/arc/outboundfeeds/rss/', limit: 2 },
+    { name: 'CoinTelegraph', url: 'https://cointelegraph.com/rss', limit: 2 },
   ];
 
   try {
@@ -69,20 +68,38 @@ export default async function handler(req, res) {
           },
           body: JSON.stringify({
             model: 'claude-sonnet-4-5',
-            max_tokens: 300,
+            max_tokens: 2000,
             messages: [{
               role: 'user',
-              content: `תרגם את הכותרות הבאות לעברית קצרה וברורה. החזר JSON בלבד ללא הסברים: {"t":["תרגום1","תרגום2",...]}\n${top5.map((i,n) => `${n+1}. ${i.title}`).join('\n')}`
+              content: `תרגם את הכותרות הבאות לעברית קצרה וברורה. החזר JSON בלבד, בפורמט הזה בדיוק, ללא טקסט נוסף לפני או אחרי:
+{"t":["תרגום1","תרגום2","תרגום3"]}
+
+הכותרות:
+${top5.map((i,n) => `${n+1}. ${i.title}`).join('\n')}`
             }]
           })
         });
-        const tData = await translateRes.json();
-        const tText = tData.content[0].text.replace(/```json|```/g, '').trim();
-        const tParsed = JSON.parse(tText);
-        top5.forEach((item, idx) => {
-          if (tParsed.t[idx]) item.title = tParsed.t[idx];
-        });
-      } catch(e) {}
+        if (translateRes.ok) {
+          const tData = await translateRes.json();
+          const rawText = tData.content && tData.content[0] && tData.content[0].text ? tData.content[0].text : '';
+          // חלץ את ה-JSON גם אם יש טקסט מסביב
+          const jsonMatch = rawText.match(/\{[\s\S]*\}/);
+          if (jsonMatch) {
+            const tParsed = JSON.parse(jsonMatch[0]);
+            if (tParsed.t && Array.isArray(tParsed.t)) {
+              top5.forEach((item, idx) => {
+                if (tParsed.t[idx] && typeof tParsed.t[idx] === 'string') {
+                  item.title = tParsed.t[idx];
+                }
+              });
+            }
+          }
+        } else {
+          console.error('Translation API failed:', translateRes.status);
+        }
+      } catch(e) {
+        console.error('Translation error:', e.message);
+      }
     }
 
     return res.status(200).json({ 
