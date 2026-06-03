@@ -51,20 +51,43 @@ ${learnedStyle ? 'למד מהסגנון הזה:\n' + learnedStyle : ''}`;
             body: JSON.stringify({
               zone: 'web_unlocker1',
               url: link,
-              format: 'raw'
+              format: 'raw',
+              country: 'us'
             }),
             signal: AbortSignal.timeout(20000)
           });
           if (articleRes.ok) {
             const html = await articleRes.text();
             if (html && html.length > 200) {
-              const text = html
-                .replace(/<script[\s\S]*?<\/script>/gi, '')
-                .replace(/<style[\s\S]*?<\/style>/gi, '')
-                .replace(/<[^>]+>/g, ' ')
-                .replace(/\s+/g, ' ')
-                .trim();
-              articleContent = text.slice(0, 5000);
+              // נסה לחלץ articleBody מ-JSON-LD (עובד ל-Yahoo, NYT, ועוד)
+              const jsonLdBlocks = html.match(/<script[^>]*type=["']application\/ld\+json["'][^>]*>([\s\S]*?)<\/script>/gi);
+              if (jsonLdBlocks) {
+                for (const block of jsonLdBlocks) {
+                  try {
+                    const jsonText = block.replace(/<script[^>]*>/, '').replace(/<\/script>/, '');
+                    const parsed = JSON.parse(jsonText);
+                    const items = Array.isArray(parsed) ? parsed : [parsed];
+                    for (const item of items) {
+                      if (item && typeof item.articleBody === 'string' && item.articleBody.length > 200) {
+                        articleContent = item.articleBody.slice(0, 5000);
+                        break;
+                      }
+                    }
+                    if (articleContent) break;
+                  } catch (e) {}
+                }
+              }
+
+              // Fallback: חילוץ טקסט מה-HTML
+              if (!articleContent) {
+                const text = html
+                  .replace(/<script[\s\S]*?<\/script>/gi, '')
+                  .replace(/<style[\s\S]*?<\/style>/gi, '')
+                  .replace(/<[^>]+>/g, ' ')
+                  .replace(/\s+/g, ' ')
+                  .trim();
+                articleContent = text.slice(0, 5000);
+              }
             }
           }
         }
