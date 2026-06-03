@@ -6,10 +6,14 @@ export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
   const RSS_FEEDS = [
-    { name: 'Reuters', url: 'https://feeds.reuters.com/reuters/businessNews', limit: 3 },
-    { name: 'Investing.com', url: 'https://www.investing.com/rss/news.rss', limit: 3 },
+    { name: 'Reuters', url: 'https://feeds.reuters.com/reuters/businessNews', limit: 4 },
+    { name: 'Investing.com', url: 'https://www.investing.com/rss/news.rss', limit: 4 },
     { name: 'CoinDesk', url: 'https://www.coindesk.com/arc/outboundfeeds/rss/', limit: 2 },
     { name: 'CoinTelegraph', url: 'https://cointelegraph.com/rss', limit: 2 },
+    { name: 'גלובס - שוק ההון', url: 'https://www.globes.co.il/webservice/rss/rssfeeder.asmx/FeederNode?iID=585', limit: 4 },
+    { name: 'גלובס - גלובלי', url: 'https://www.globes.co.il/webservice/rss/rssfeeder.asmx/FeederNode?iID=1225', limit: 4 },
+    { name: 'גלובס', url: 'https://www.globes.co.il/webservice/rss/rssfeeder.asmx/FeederNode?iID=2', limit: 3 },
+    { name: 'דה מרקר', url: 'https://www.themarker.com/srv/rss', limit: 3 },
   ];
 
   try {
@@ -53,11 +57,12 @@ export default async function handler(req, res) {
       return res.status(200).json({ topics: [{ title: 'חדשות שוק ההון היום', source: '', link: '' }] });
     }
 
-    const top5 = allItems.slice(0, 10);
+    // קח פול של עד 25 כותרות, ובקש מ-Claude לבחור את 10 המאקרו ולתרגם
+    const candidates = allItems.slice(0, 25);
+    let finalTopics = null;
 
-    // תרגם את כל הכותרות לעברית
     const apiKey = process.env.ANTHROPIC_API_KEY;
-    if (apiKey) {
+    if (apiKey && candidates.length > 0) {
       try {
         const translateRes = await fetch('https://api.anthropic.com/v1/messages', {
           method: 'POST',
@@ -71,40 +76,69 @@ export default async function handler(req, res) {
             max_tokens: 2000,
             messages: [{
               role: 'user',
-              content: `תרגם את הכותרות הבאות לעברית קצרה וברורה. החזר JSON בלבד, בפורמט הזה בדיוק, ללא טקסט נוסף לפני או אחרי:
-{"t":["תרגום1","תרגום2","תרגום3"]}
+              content: `מהרשימה הבאה של כותרות חדשות פיננסיות, בחר את 10 הכותרות הכי מאקרו / רחבות.
+
+עדיפות גבוהה (מאקרו):
+- ריבית, אינפלציה, נתונים מאקרו-כלכליים
+- מדדי שוק (S&P 500, נאסד"ק, ת"א 35, דאו, FTSE)
+- בנקים מרכזיים (פד, בנק ישראל, ECB)
+- גיאופוליטיקה ומדיניות שמשפיעות על השוק
+- מטבעות, דולר, שקל, ביטקוין כתופעה רחבה
+- סחורות (נפט, זהב)
+- רגולציה רחבה, מסים, חקיקה כלכלית
+- מגמות שוק כלליות, סקטורים, תעשיות
+
+עדיפות נמוכה (מיקרו - הימנע):
+- חברה ספציפית אחת (אלא אם זו ענקית שמזיזה את כל השוק כמו אנבידיה/אפל בהקשר מאקרו)
+- יעדי מחיר לאנליסטים על מניה אחת
+- רכישות פרטיות, דוחות רבעוניים של חברה בודדת
+- חדשות לא-פיננסיות (תרבות, ספורט, פוליטיקה לא-כלכלית)
+
+החזר JSON בלבד בפורמט הזה בדיוק, ללא טקסט נוסף:
+{"selected":[{"i":3,"t":"כותרת בעברית"},{"i":7,"t":"כותרת בעברית"}, ...]}
+
+i = מספר הכותרת ברשימה למטה. t = הכותרת בעברית (אם המקור עברי - העתק כמו שהוא; אם אנגלית - תרגם לעברית קצרה וברורה).
 
 הכותרות:
-${top5.map((i,n) => `${n+1}. ${i.title}`).join('\n')}`
+${candidates.map((it,n) => `${n+1}. [${it.source}] ${it.title}`).join('\n')}`
             }]
           })
         });
         if (translateRes.ok) {
           const tData = await translateRes.json();
           const rawText = tData.content && tData.content[0] && tData.content[0].text ? tData.content[0].text : '';
-          // חלץ את ה-JSON גם אם יש טקסט מסביב
           const jsonMatch = rawText.match(/\{[\s\S]*\}/);
           if (jsonMatch) {
             const tParsed = JSON.parse(jsonMatch[0]);
-            if (tParsed.t && Array.isArray(tParsed.t)) {
-              top5.forEach((item, idx) => {
-                if (tParsed.t[idx] && typeof tParsed.t[idx] === 'string') {
-                  item.title = tParsed.t[idx];
+            if (tParsed.selected && Array.isArray(tParsed.selected)) {
+              const built = [];
+              for (const sel of tParsed.selected) {
+                if (sel && typeof sel.i === 'number' && sel.i >= 1 && sel.i <= candidates.length) {
+                  const orig = candidates[sel.i - 1];
+                  built.push({
+                    title: typeof sel.t === 'string' && sel.t.length > 0 ? sel.t : orig.title,
+                    source: orig.source,
+                    link: orig.link
+                  });
                 }
-              });
+              }
+              if (built.length > 0) finalTopics = built;
             }
           }
         } else {
-          console.error('Translation API failed:', translateRes.status);
+          console.error('Filter/translate API failed:', translateRes.status);
         }
       } catch(e) {
-        console.error('Translation error:', e.message);
+        console.error('Filter/translate error:', e.message);
       }
     }
 
-    return res.status(200).json({ 
-      topics: top5.map(i => ({ title: i.title, source: i.source, link: i.link }))
-    });
+    // fallback: אם הסינון נכשל, החזר את 10 הראשונים כמו שהם
+    if (!finalTopics) {
+      finalTopics = candidates.slice(0, 10).map(i => ({ title: i.title, source: i.source, link: i.link }));
+    }
+
+    return res.status(200).json({ topics: finalTopics });
   } catch (error) {
     return res.status(200).json({ topics: [{ title: 'חדשות שוק ההון היום', source: '', link: '' }] });
   }
